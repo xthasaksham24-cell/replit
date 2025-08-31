@@ -58,12 +58,19 @@ class Item(db.Model):
 class Sale(db.Model):
     __tablename__ = 'sales'
     id = db.Column(db.Integer, primary_key=True)
-    invoice_number = db.Column(db.String(50), unique=True, nullable=False)
+    bill_number = db.Column(db.String(50), unique=True, nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))
-    total_amount = db.Column(Numeric(10, 2), nullable=False)
+    subtotal_amount = db.Column(Numeric(10, 2), nullable=False)
     discount = db.Column(Numeric(10, 2), default=0.00)
-    tax_amount = db.Column(Numeric(10, 2), default=0.00)
-    final_amount = db.Column(Numeric(10, 2), nullable=False)
+    taxable_amount = db.Column(Numeric(10, 2), nullable=False)
+    vat_amount = db.Column(Numeric(10, 2), default=0.00)
+    excise_amount = db.Column(Numeric(10, 2), default=0.00)
+    total_amount = db.Column(Numeric(10, 2), nullable=False)
+    vat_enabled = db.Column(db.Boolean, default=False)
+    excise_enabled = db.Column(db.Boolean, default=False)
+    payment_type = db.Column(db.String(20), default='cash')  # cash, credit, bank
+    payment_account = db.Column(db.String(100))
+    sales_account = db.Column(db.String(100))
     sale_date = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
     
@@ -78,6 +85,8 @@ class SaleItem(db.Model):
     quantity = db.Column(Numeric(10, 2), nullable=False)
     unit_price = db.Column(Numeric(10, 2), nullable=False)
     total_price = db.Column(Numeric(10, 2), nullable=False)
+    vat_enabled = db.Column(db.Boolean, default=False)
+    excise_enabled = db.Column(db.Boolean, default=False)
     
     item = db.relationship('Item')
 
@@ -86,10 +95,17 @@ class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
     vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'))
-    total_amount = db.Column(Numeric(10, 2), nullable=False)
+    subtotal_amount = db.Column(Numeric(10, 2), nullable=False)
     discount = db.Column(Numeric(10, 2), default=0.00)
-    tax_amount = db.Column(Numeric(10, 2), default=0.00)
-    final_amount = db.Column(Numeric(10, 2), nullable=False)
+    taxable_amount = db.Column(Numeric(10, 2), nullable=False)
+    vat_amount = db.Column(Numeric(10, 2), default=0.00)
+    excise_amount = db.Column(Numeric(10, 2), default=0.00)
+    total_amount = db.Column(Numeric(10, 2), nullable=False)
+    vat_enabled = db.Column(db.Boolean, default=False)
+    excise_enabled = db.Column(db.Boolean, default=False)
+    payment_type = db.Column(db.String(20), default='cash')  # cash, credit, bank
+    payment_account = db.Column(db.String(100))
+    purchase_account = db.Column(db.String(100))
     purchase_date = db.Column(db.DateTime, default=datetime.utcnow)
     notes = db.Column(db.Text)
     
@@ -104,5 +120,35 @@ class PurchaseItem(db.Model):
     quantity = db.Column(Numeric(10, 2), nullable=False)
     unit_price = db.Column(Numeric(10, 2), nullable=False)
     total_price = db.Column(Numeric(10, 2), nullable=False)
+    vat_enabled = db.Column(db.Boolean, default=False)
+    excise_enabled = db.Column(db.Boolean, default=False)
     
     item = db.relationship('Item')
+
+class PurchaseLedger(db.Model):
+    __tablename__ = 'purchase_ledger'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    particular = db.Column(db.String(200), nullable=False)
+    invoice_no = db.Column(db.String(50), nullable=False)
+    amount = db.Column(Numeric(10, 2), nullable=False)
+    purchase_id = db.Column(db.Integer, db.ForeignKey('purchases.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class SalesLedger(db.Model):
+    __tablename__ = 'sales_ledger'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    particular = db.Column(db.String(200), nullable=False)
+    bill_no = db.Column(db.String(50), nullable=False)
+    amount = db.Column(Numeric(10, 2), nullable=False)
+    sale_id = db.Column(db.Integer, db.ForeignKey('sales.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Settings(db.Model):
+    __tablename__ = 'settings'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)
+    value = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
